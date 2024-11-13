@@ -14,27 +14,32 @@ logger = Logger(__name__, level=logging.INFO, log_to_file=True,
                 filename='tasks.log').get_logger()
 
 
-async def document_process(path: str, article_id: int, magazine_id: int, user_name: str):
+async def document_process(path: str, article_id: int, user_name: str, session):
     """Function to process the document"""
-    await asyncio.sleep(3)
-    session = Depends(get_async_session)
+    await asyncio.sleep(1)
 
     logger.info(f"Start checking the document: {path} for article: {article_id}")
     try:
+        # check and replace issues in the document
         doc = DocumentWorkFlow(path)
         document = await doc.start_flow()
-
         report = await doc.create_report()
 
-        article = session.execute(
-            update(Articles).where(Articles.c.id == article_id).values(document=document,
+        logger.info(f"Report: {report}")
+
+        # get back updated document "path and new document"
+        new_path, new_document = await doc.get_updated_document(user_name=user_name)
+        logger.info('1')
+
+        logger.info('2')
+
+        await session.execute(
+            update(Articles).where(Articles.c.id == article_id).values(file=new_path,
                                                                        checked=True,
                                                                        list_issues=report)
         )
-        session.commit()
-
-        update_document = DocumentInit(file=document, magazine_id=magazine_id)
-        updated_document_path = await update_document.save_document(user_name=user_name, session=session)
+        await session.commit()
+        logger.info('ГОТОВО')
 
         logger.info(f"Document processed successfully: {path}")
 
