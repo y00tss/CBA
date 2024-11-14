@@ -4,6 +4,7 @@ Document processing module
 from datetime import datetime
 import re
 import uuid
+from articles.article_service.document_work_abstract import DocumentWorkAbstract
 
 import docx
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -22,7 +23,8 @@ logger = Logger(__name__, level=logging.INFO, log_to_file=True,
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-class DocumentWorkFlow:
+class DocumentWorkFlowAPA(DocumentWorkAbstract):
+    """Class to process document according to APA style"""
     def __init__(self, path: str):
         self.path = path
         self.document = self._get_document()
@@ -44,6 +46,7 @@ class DocumentWorkFlow:
     async def start_flow(self):
         """Start document processing"""
         # 1. General Document Formatting Rules
+        logger.info("Start document processing START")
         await self._front()
         await self._margins()
         await self._line_spacing()

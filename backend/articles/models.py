@@ -1,4 +1,6 @@
 from datetime import datetime
+from sqlalchemy import Enum
+from enum import Enum as PyEnum
 
 from sqlalchemy import (
     Table, Column,
@@ -13,6 +15,12 @@ from magazines.models import Magazine
 
 metadata = MetaData()
 
+
+class RefactorType(PyEnum):
+    APA = "APA"
+    Custom = "Custom"
+
+
 Articles = Table(
     'articles',
     metadata,
@@ -25,4 +33,5 @@ Articles = Table(
     Column('publish_date', TIMESTAMP, default=datetime.utcnow),
     Column('checked', Boolean, default=False, nullable=False),
     Column('list_issues', JSON, nullable=True),
+    Column('refactor_type', Enum(RefactorType), nullable=False)
 )

@@ -1,5 +1,5 @@
 import asyncio
-from articles.article_service.document_work import DocumentWorkFlow
+from articles.article_service.mapper_type import DocumentWorkFlowFactory
 from articles.models import Articles
 from sqlalchemy import update
 
@@ -10,13 +10,13 @@ logger = Logger(__name__, level=logging.INFO, log_to_file=True,
                 filename='tasks.log').get_logger()
 
 
-async def document_process(path: str, article_id: int, user_name: str, session):
+async def document_process(style: str, path: str, article_id: int, user_name: str, session):
     """Function to process the document"""
     await asyncio.sleep(1)
 
     try:
         # check and replace issues in the document
-        doc = DocumentWorkFlow(path)
+        doc = DocumentWorkFlowFactory.create_workflow(style=style, path=path)
         await doc.start_flow()
         report = await doc.create_report()
 

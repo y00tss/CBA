@@ -12,10 +12,8 @@ from settings.database import get_async_session, metadata
 from settings.config import TEST_DATABASE_URL
 from settings.main import app
 
-# DATABASE
-DATABASE_URL_TEST = TEST_DATABASE_URL
 
-engine_test = create_async_engine(DATABASE_URL_TEST, poolclass=NullPool)
+engine_test = create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
 async_session_maker = sessionmaker(
     engine_test, class_=AsyncSession, expire_on_commit=False
 )

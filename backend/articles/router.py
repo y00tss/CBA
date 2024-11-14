@@ -12,7 +12,7 @@ from sqlalchemy import (
 
 from auth.models import User
 from articles.models import Articles
-
+from articles.schemas import RefactorType
 from articles.article_service.document_init import DocumentInit
 from articles.article_service.report import Report
 from auth.base_config import current_user
@@ -139,6 +139,7 @@ async def create_articles(
         background_tasks: BackgroundTasks,
         title: str = Form(...),
         magazine_id: int = Form(...),
+        refactor_type: RefactorType = Form(...),
         file: UploadFile = File(...),
         user: User = Depends(current_user),
         session: AsyncSession = Depends(get_async_session),
@@ -157,7 +158,8 @@ async def create_articles(
             user_id=user.id,
             magazine_id=magazine_id,
             updated_file=None,
-            original_file=document_path
+            original_file=document_path,
+            refactor_type=refactor_type
         )
         result = await session.execute(insert_stmt)
         await session.commit()
@@ -168,7 +170,8 @@ async def create_articles(
 
         background_tasks.add_task(
             document_process,
-            document_path,
+            style=refactor_type,
+            path=document_path,
             article_id=article_id,
             user_name=user.username,
             session=session
@@ -192,6 +195,7 @@ async def update_article(
         article_id: int,
         title: str = Form(...),
         magazine_id: int = Form(...),
+        refactor_type: RefactorType = Form(...),
         file: UploadFile = File(...),
         user: User = Depends(current_user),
         session: AsyncSession = Depends(get_async_session),
@@ -227,7 +231,8 @@ async def update_article(
                 original_file=document_path,
                 updated_file=None,
                 checked=False,
-                user_id=user.id
+                user_id=user.id,
+                refactor_type=refactor_type
             )
         )
         await session.commit()
@@ -235,7 +240,8 @@ async def update_article(
 
         background_tasks.add_task(
             document_process,
-            document_path,
+            style=refactor_type,
+            path=document_path,
             article_id=article_id,
             user_name=user.username,
             session=session
