@@ -139,12 +139,12 @@ async def update_article(
     """
     try:
         result = await session.execute(select(Articles).where(Articles.c.id == article_id))
-        article = result.scalar_one_or_none()
+        article = result.fetchone()
         if not article:
             return {"status": 404, "description": "Article not found"}
 
-        old_original_path = article.original_file
-        old_updated_path = article.updated_file
+        old_original_path = article[2]
+        old_updated_path = article[3]
 
         document = DocumentInit(file=file, magazine_id=magazine_id)
         document_path = await document.save_document(user_name=user.username, session=session)
@@ -153,13 +153,18 @@ async def update_article(
         if old_updated_path:
             await DocumentInit.delete_document(old_updated_path)
 
-        article.title = title
-        article.magazine_id = magazine_id
-        article.original_file = document_path
-        article.updated_file = None
-        article.checked = False
-        article.user_id = user.id
-
+        await session.execute(
+            update(Articles)
+            .where(Articles.c.id == article_id)
+            .values(
+                title=title,
+                magazine_id=magazine_id,
+                original_file=document_path,
+                updated_file=None,
+                checked=False,
+                user_id=user.id
+            )
+        )
         await session.commit()
         logger.info(f"Article was updated by user: {user.username}")
 
