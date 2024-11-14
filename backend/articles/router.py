@@ -83,7 +83,6 @@ async def download_updated_file(
         result = await session.execute(select(Articles
                                               ).where(Articles.c.id == article_id))
         article = result.fetchone()
-        logger.info(f"Article: {article}")
 
         if not article:
             return {"status": 404, "description": "Article not found"}
