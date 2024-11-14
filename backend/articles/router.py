@@ -125,7 +125,7 @@ async def get_work_report(
             return {"status": 404, "description": "Report not found"}
 
         report = Report(report)
-        result = await report.get_report()
+        result = report.get_report()
 
         return {"status": 200, "description": f"{result}"}
 
