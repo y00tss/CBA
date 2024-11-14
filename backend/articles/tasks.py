@@ -10,7 +10,10 @@ logger = Logger(__name__, level=logging.INFO, log_to_file=True,
                 filename='tasks.log').get_logger()
 
 
-async def document_process(style: str, path: str, article_id: int, user_name: str, session):
+async def document_process(
+        style: str, path: str,
+        article_id: int, user_name: str, session
+):
     """Function to process the document"""
     await asyncio.sleep(1)
 

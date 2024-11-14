@@ -27,7 +27,10 @@ class Report:
 
         recommendations = self._get_all_recommendations()
 
-        logger.info(f"Report generated: {total_count} issues, {total_recommendations} recommendations")
+        logger.info(
+            f"Report generated: {total_count} issues, "
+            f"{total_recommendations} recommendations"
+        )
 
         return {
             "total_count": total_count,
