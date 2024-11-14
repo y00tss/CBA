@@ -74,12 +74,13 @@ async def create_articles(
     try:
         document = DocumentInit(file=file, magazine_id=magazine_id)
         document_path = await document.save_document(user_name=user.username, session=session)
-
+        logger.info(f"Document saved: {document_path}")
         insert_stmt = insert(Articles).values(
             title=title,
             user_id=user.id,
             magazine_id=magazine_id,
-            file=document_path,
+            updated_file=None,
+            original_file=document_path
         )
         result = await session.execute(insert_stmt)
         await session.commit()
@@ -92,8 +93,8 @@ async def create_articles(
             document_process,
             document_path,
             article_id=article_id,
-            magazine_id=magazine_id,
-            user_name=user.username
+            user_name=user.username,
+            session=session
         )
 
         return {
@@ -107,10 +108,29 @@ async def create_articles(
         return {"status": 500, "description": f"{e}"}
 
 
+# @router.post("/test", status_code=201)
+# async def test(
+#         background_tasks: BackgroundTasks,
+#         user: User = Depends(current_user),
+#         session: AsyncSession = Depends(get_async_session),
+# ):
+#     path = 'articles/documents/test/original_document_2024-11-14_b4eec6ed-65d4-4a3a-983d-a2d7d78af449.docx'
+#     background_tasks.add_task(
+#         document_process,
+#         path,
+#         article_id=31,
+#         user_name=user.username,
+#         session=session
+#     )
+
+
 @router.patch("/{article_id}", status_code=200)
 async def update_article(
+        background_tasks: BackgroundTasks,
         article_id: int,
-        post_update: ArticleUpdateRequest,
+        title: str = Form(...),
+        magazine_id: int = Form(...),
+        file: UploadFile = File(...),
         user: User = Depends(current_user),
         session: AsyncSession = Depends(get_async_session),
 ):
@@ -118,15 +138,39 @@ async def update_article(
     Update magazine
     """
     try:
+        result = await session.execute(select(Articles).where(Articles.c.id == article_id))
+        article = result.scalar_one_or_none()
+        if not article:
+            return {"status": 404, "description": "Article not found"}
 
-        await session.execute(update(Articles).where(Articles.c.id == article_id).values(
-            title=post_update.title,
-            maximum_articles=post_update.maximum_articles,
-            user_id=user.id,
-            magazine_id=post_update.magazine_id
-        ))
+        old_original_path = article.original_file
+        old_updated_path = article.updated_file
+
+        document = DocumentInit(file=file, magazine_id=magazine_id)
+        document_path = await document.save_document(user_name=user.username, session=session)
+        if old_original_path:
+            await DocumentInit.delete_document(old_original_path)
+        if old_updated_path:
+            await DocumentInit.delete_document(old_updated_path)
+
+        article.title = title
+        article.magazine_id = magazine_id
+        article.original_file = document_path
+        article.updated_file = None
+        article.checked = False
+        article.user_id = user.id
+
         await session.commit()
         logger.info(f"Article was updated by user: {user.username}")
+
+        background_tasks.add_task(
+            document_process,
+            document_path,
+            article_id=article_id,
+            user_name=user.username,
+            session=session
+        )
+
         return {
             "status": 200,
             "description": "Article changed successfully"
@@ -147,6 +191,19 @@ async def delete_article(
     Delete magazine
     """
     try:
+        result = await session.execute(select(Articles).where(Articles.c.id == article_id))
+        article = result.fetchone()
+        if not article:
+            return {"status": 404, "description": "Article not found"}
+
+        original_path = article.original_file
+        update_path = article.updated_file
+
+        if original_path:
+            await DocumentInit.delete_document(original_path)
+        if update_path:
+            await DocumentInit.delete_document(update_path)
+
         await session.execute(delete(Articles).where(Articles.c.id == article_id))
         await session.commit()
 

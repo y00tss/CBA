@@ -11,9 +11,29 @@ from datetime import datetime
 import os
 from fastapi import UploadFile
 import uuid
+from abc import ABC, abstractmethod
 
 
-class DocumentInit:
+class BaseDocument(ABC):
+    """Base document class"""
+
+    @abstractmethod
+    async def save_document(self, user_name, session: AsyncSession) -> str:
+        pass
+
+    @staticmethod
+    async def delete_document(path: str) -> bool:
+        """Static method to delete a document from the file system"""
+        if path and os.path.exists(path):
+            print(f"Deleting document: {path}")
+            os.remove(path)
+            return True
+        return False
+
+
+class DocumentInit(BaseDocument):
+    """Document initialization class for files with the .docx extension"""
+
     def __init__(self, file: UploadFile, magazine_id: int, update: bool = False):
         self.file = file
         self.magazine_id = magazine_id
@@ -22,7 +42,7 @@ class DocumentInit:
     async def save_document(self, user_name, session: AsyncSession) -> str:
         """Save document to database"""
         if all([await self._check_extension(), await self._magazine_exists(self.magazine_id, session),
-                      await self._check_max_articles(session)]):
+                await self._check_max_articles(session)]):
             file_path = await self._create_document(user_name)
             return file_path
         raise ValueError("Unexpected error occurred while saving the document.")
@@ -35,11 +55,9 @@ class DocumentInit:
 
     async def _magazine_exists(self, magazine_id: int, session: AsyncSession) -> bool:
         """Check if magazine exists"""
-        if self.update:
-            magazine = await session.execute(select(Magazine).where(Magazine.c.id == magazine_id))
-            if not magazine.fetchone():
-                raise ValueError("Magazine not found.")
-            return True
+        magazine = await session.execute(select(Magazine).where(Magazine.c.id == magazine_id))
+        if not magazine.fetchone():
+            raise ValueError("Magazine not found.")
         return True
 
     async def _check_max_articles(self, session: AsyncSession) -> bool:
@@ -66,7 +84,6 @@ class DocumentInit:
 
         os.makedirs(f"articles/documents/{user_name}", exist_ok=True)
 
-        # Сохраняем файл асинхронно
         async with aiofiles.open(file_path, "wb") as f:
             content = await self.file.read()
             await f.write(content)
