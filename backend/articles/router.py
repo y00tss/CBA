@@ -14,6 +14,7 @@ from auth.models import User
 from articles.models import Articles
 
 from articles.article_service.document_init import DocumentInit
+from articles.article_service.report import Report
 from auth.base_config import current_user
 from settings.database import get_async_session
 from articles.tasks import document_process
@@ -95,10 +96,41 @@ async def download_updated_file(
         return FileResponse(
             path=updated_file_path,
             filename=os.path.basename(updated_file_path),
-            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document' # noqa
+            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'  # noqa
         )
     except Exception as e:
         logger.error(f"Error downloading updated file: {e}")
+        return {"status": 500, "description": f"{e}"}
+
+
+@router.get("/{article_id}/report", status_code=200)
+async def get_work_report(
+        article_id: int,
+        user: User = Depends(current_user),
+        session: AsyncSession = Depends(get_async_session)
+):
+    """
+    Get the work report for the given article ID
+    """
+    try:
+        result = await session.execute(select(Articles
+                                              ).where(Articles.c.id == article_id))
+        article = result.fetchone()
+
+        if not article:
+            return {"status": 404, "description": "Article not found"}
+
+        report = article[8]
+        if not report:
+            return {"status": 404, "description": "Report not found"}
+
+        report = Report(report)
+        result = await report.get_report()
+
+        return {"status": 200, "description": f"{result}"}
+
+    except Exception as e:
+        logger.error(f"Error during report creation: {e}")
         return {"status": 500, "description": f"{e}"}
 
 
