@@ -2,7 +2,7 @@ import os
 from auth.models import User
 from magazines.models import Magazine
 from passlib.context import CryptContext
-from sqlalchemy import select
+from sqlalchemy import select, insert
 
 from services.logger.logger import Logger
 import logging
@@ -41,7 +41,7 @@ class InitializationData:
                     hashed_password=hashed_password,
                     is_superuser=True
                 )
-                await self.session.add(new_user)
+                self.session.add(new_user)
                 await self.session.commit()
                 logger.info("Superuser created")
 
@@ -53,11 +53,12 @@ class InitializationData:
         """Creating magazines if they do not exist yet."""
 
         try:
-            magazines = await self.session.execute(select(Magazine).order_by(Magazine.c.id)) # noqa
-            if not magazines.scalars().all():
-                magazine = Magazine(name="Magazine 1", maximum_articles=2)
+            result = await self.session.execute(select(Magazine))
+            magazines = result.scalars().all()
 
-                await self.session.add(magazine)
+            if not magazines:
+                stmt = insert(Magazine).values(title="Magazine 1", maximum_articles=5)
+                await self.session.execute(stmt)
                 await self.session.commit()
                 logger.info("Magazines created")
 
