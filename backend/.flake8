@@ -1,0 +1,5 @@
+[flake8]
+exclude =
+    __pycache__,
+    alembic,
+max-line-length = 88

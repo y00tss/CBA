@@ -1,1 +1,4 @@
 /.venv/
+/backend/services/logger/logs/
+/backend/articles/documents/
+backend/.env
