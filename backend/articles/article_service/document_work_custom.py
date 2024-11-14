@@ -1,15 +1,7 @@
 """
-Document processing module
+Document processing module for custom style
 """
 from articles.article_service.document_work_abstract import DocumentWorkAbstract
-import logging
-from services.logger.logger import Logger
-import os
-
-logger = Logger(__name__, level=logging.INFO, log_to_file=True,
-                filename='workflow.log').get_logger()
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class DocumentWorkFlowCustom(DocumentWorkAbstract):

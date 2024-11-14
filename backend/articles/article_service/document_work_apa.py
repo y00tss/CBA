@@ -1,5 +1,5 @@
 """
-Document processing module
+Document processing module for APA style
 """
 from datetime import datetime
 import re

@@ -9,7 +9,7 @@ logger = Logger(__name__, level=logging.INFO, log_to_file=True, filename='report
 
 class Report:
     """
-    Report of performed actions
+    Report of performed actions for all styles
     """
 
     def __init__(self, report):

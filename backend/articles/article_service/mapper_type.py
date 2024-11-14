@@ -4,7 +4,7 @@ from articles.article_service.document_work_custom import DocumentWorkFlowCustom
 
 class DocumentWorkFlowFactory:
     """
-    Factory to create document processing workflow
+    Factory to create document processing workflow depending on the style editing
     """
 
     @staticmethod
@@ -12,9 +12,10 @@ class DocumentWorkFlowFactory:
         """
         Create workflow depending on the style editing
         """
-        if style == "APA":
-            return DocumentWorkFlowAPA(path)
-        elif style == "Custom":
-            return DocumentWorkFlowCustom(path)
-        else:
-            raise ValueError("Unknown style")
+        match style:
+            case "APA":
+                return DocumentWorkFlowAPA(path)
+            case "Custom":
+                return DocumentWorkFlowCustom(path)
+            case _:
+                raise ValueError("Unknown style")

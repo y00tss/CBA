@@ -1,5 +1,6 @@
 """
-Document interface for the Article Service
+Document interface for FILE CREATION ONLY
+Now system can work with .docx files only
 """
 from datetime import datetime
 import os
