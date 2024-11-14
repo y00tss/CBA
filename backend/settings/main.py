@@ -6,6 +6,10 @@ from auth.router import router as router_auth
 from magazines.router import router as router_magazines
 from articles.router import router as router_articles
 
+from settings.database import async_session_maker
+
+from services.autostart.create_first_user import create_superuser
+
 app = FastAPI(
     title=" ComeBack Agency",
     description="API for ComeBack Agency",
@@ -31,6 +35,13 @@ app.include_router(
     prefix="/articles",
     tags=["Articles"],
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    async with async_session_maker() as session:
+        await create_superuser(session)
+
 
 origins = ["*"]
 
