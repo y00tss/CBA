@@ -8,7 +8,7 @@ from articles.router import router as router_articles
 
 from settings.database import async_session_maker
 
-from services.autostart.create_first_user import create_superuser
+from services.autostart.initial_data import InitializationData
 
 app = FastAPI(
     title=" ComeBack Agency",
@@ -40,7 +40,8 @@ app.include_router(
 @app.on_event("startup")
 async def startup_event():
     async with async_session_maker() as session:
-        await create_superuser(session)
+        init_data = InitializationData(session)
+        await init_data.start_app()
 
 
 origins = ["*"]
