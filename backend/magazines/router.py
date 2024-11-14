@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import insert, select, update, delete
+from sqlalchemy import (
+    insert, select,
+    update, delete,
+)
 
 from auth.models import User
 from magazines.models import Magazine
@@ -69,7 +72,10 @@ async def create_magazine(
     try:
         if not user.is_superuser:
             logger.error(f"User: {user.username} is not a superuser")
-            return {"status": 403, "description": "Forbidden. Only superusers can create magazines"}
+            return {
+                "status": 403,
+                "description": "Forbidden. Only superusers can create magazines"
+            }
 
         await session.execute(insert(Magazine).values(
             title=post_request.title,
@@ -78,7 +84,9 @@ async def create_magazine(
         await session.commit()
         await session.close()
 
-        logger.info(f"Magazine: {post_request.title} created by superuser: {user.username}")
+        logger.info(
+            f"Magazine: {post_request.title} created by superuser: {user.username}"
+        )
         return {
             "status": 201,
             "description": "Magazine created successfully"
@@ -102,14 +110,20 @@ async def update_magazine(
     try:
         if not user.is_superuser:
             logger.error(f"User: {user.username} is not a superuser")
-            return {"status": 403, "description": "Forbidden. Only superusers can update magazines"}
+            return {
+                "status": 403,
+                "description": "Forbidden. Only superusers can update magazines"
+            }
 
-        await session.execute(update(Magazine).where(Magazine.c.id == magazine_id).values(
+        await session.execute(update(Magazine
+                                     ).where(Magazine.c.id == magazine_id).values(
             title=post_update.title,
             maximum_articles=post_update.maximum_articles,
         ))
         await session.commit()
-        logger.info(f"Magazine: {magazine_id} was updated by superuser: {user.username}")
+        logger.info(
+            f"Magazine: {magazine_id} was updated by superuser: {user.username}"
+        )
         return {
             "status": 200,
             "description": "Magazine changed successfully"

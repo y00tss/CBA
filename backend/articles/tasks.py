@@ -1,7 +1,7 @@
 import asyncio
 from articles.article_service.document_work import DocumentWorkFlow
 from articles.models import Articles
-from sqlalchemy import select, update
+from sqlalchemy import update
 
 import logging
 from services.logger.logger import Logger
@@ -17,15 +17,15 @@ async def document_process(path: str, article_id: int, user_name: str, session):
     try:
         # check and replace issues in the document
         doc = DocumentWorkFlow(path)
-        document = await doc.start_flow()
+        await doc.start_flow()
         report = await doc.create_report()
 
         # get back updated document: "path"
         new_path = await doc.get_updated_document(user_name=user_name)
 
         await session.execute(
-            update(Articles).where(Articles.c.id == article_id).values(updated_file=new_path,
-                                                                       checked=True, list_issues=report)
+            update(Articles).where(Articles.c.id == article_id).values(
+                updated_file=new_path, checked=True, list_issues=report)
         )
         await session.commit()
 

@@ -4,14 +4,14 @@ Document processing module
 from datetime import datetime
 import re
 import uuid
+
 import docx
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches
-from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.enum.section import WD_SECTION
 from docx.shared import Pt
-import json
+
 import logging
 from services.logger.logger import Logger
 import os
@@ -85,12 +85,16 @@ class DocumentWorkFlow:
         for paragraph in self.document.paragraphs:
             for run in paragraph.runs:
                 if run.font.name != 'Times New Roman':
-                    self.format_issues.append(f"Times New Roman was used for: '{run.text}'")
+                    self.format_issues.append(
+                        f"Times New Roman was used for: '{run.text}'"
+                    )
 
                     run.font.name = 'Times New Roman'
 
                 if run.font.size and run.font.size.pt != 12:
-                    self.format_issues.append(f"Font size 12 px was user for text: '{run.text}'")
+                    self.format_issues.append(
+                        f"Font size 12 px was user for text: '{run.text}'"
+                    )
 
                     run.font.size = docx.shared.Pt(12)
 
@@ -106,7 +110,9 @@ class DocumentWorkFlow:
                 section.right_margin = 1
                 section.top_margin = 1
                 section.bottom_margin = 1
-                self.format_issues.append("Margins were corrected to 1 inch on all sides")
+                self.format_issues.append(
+                    "Margins were corrected to 1 inch on all sides"
+                )
 
     async def _line_spacing(self):
         """Check line spacing"""
@@ -114,18 +120,24 @@ class DocumentWorkFlow:
             if paragraph.text.strip():
                 if paragraph.paragraph_format.line_spacing != 2:
                     paragraph.paragraph_format.line_spacing = 2
-                    self.format_issues.append(f"Line spacing corrected to 2 for paragraph: '{paragraph.text}'")
+                    self.format_issues.append(
+                        f"Line spacing corrected to 2 for paragraph: '{paragraph.text}'"
+                    )
 
                 space_after = paragraph.paragraph_format.space_after
                 space_before = paragraph.paragraph_format.space_before
 
                 if space_after is not None and space_after > 0:
                     paragraph.paragraph_format.space_after = 0
-                    self.format_issues.append(f"Extra space after paragraph removed: '{paragraph.text}'")
+                    self.format_issues.append(
+                        f"Extra space after paragraph removed: '{paragraph.text}'"
+                    )
 
                 if space_before is not None and space_before > 0:
                     paragraph.paragraph_format.space_before = 0
-                    self.format_issues.append(f"Extra space before paragraph removed: '{paragraph.text}'")
+                    self.format_issues.append(
+                        f"Extra space before paragraph removed: '{paragraph.text}'"
+                    )
 
     async def _running_head(self):
         """Check running head"""
@@ -140,11 +152,11 @@ class DocumentWorkFlow:
             running_head = header.paragraphs[0].text
             if not running_head.isupper():
                 header.paragraphs[0].text = running_head.upper()
-                self.format_issues.append({"issue": "Running head corrected to uppercase", "location": running_head})
+                self.format_issues.append({"issue": "Running head corrected to uppercase", "location": running_head}) # noqa
 
             if not header.paragraphs[0].alignment == 0:
                 header.paragraphs[0].paragraph_format.alignment = 0
-                self.format_issues.append({"issue": "Running head aligned to left", "location": running_head})
+                self.format_issues.append({"issue": "Running head aligned to left", "location": running_head}) # noqa
 
     async def _page_numbers(self):
         """Check and fix page numbers in header"""
@@ -160,11 +172,15 @@ class DocumentWorkFlow:
             paragraph = header.paragraphs.add()
             paragraph.alignment = 2
             paragraph.text = "1"
-            self.format_issues.append({"issue": "Page number added to header, right-aligned"})
+            self.format_issues.append(
+                "Page number added to header, right-aligned"
+            )
         else:
             if not header.paragraphs[-1].alignment == 2:
                 header.paragraphs[-1].paragraph_format.alignment = 2
-                self.format_issues.append({"issue": "Page number aligned to right"})
+                self.format_issues.append(
+                    "Page number aligned to right"
+                )
 
     async def _title_page(self):
         """Check title page"""
@@ -174,51 +190,71 @@ class DocumentWorkFlow:
             if para.style.name == 'Title':
                 found_title = True
                 if not self._is_title_case(para.text):
-                    self.format_issues.append(f"Title case was used for title: {para.text}")
+                    self.format_issues.append(
+                        f"Title case was used for title: {para.text}"
+                    )
                     para.text = para.text.title()
 
                 if not self._is_centered(para):
-                    self.format_issues.append(f"Title was centered for title: {para.text}")
+                    self.format_issues.append(
+                        f"Title was centered for title: {para.text}"
+                    )
                     para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 if not any(run.bold for run in para.runs):
-                    self.format_issues.append(f"Title was bolded for title: {para.text}")
+                    self.format_issues.append(
+                        f"Title was bolded for title: {para.text}"
+                    )
                     for run in para.runs:
                         run.bold = True
                 break
 
         if not found_title:
-            self.required_format_actions.append("Add title to upper half of first page")
+            self.required_format_actions.append(
+                "Add title to upper half of first page"
+            )
 
         author_info_found = False
         for para in first_page[1:]:
             if para.text.strip():
                 author_info_found = True
                 if not self._is_centered(para):
-                    self.format_issues.append(f"Author information was centered")
+                    self.format_issues.append(
+                        "Author information was centered"
+                    )
                     para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 if para.paragraph_format.line_spacing != Pt(24):
-                    self.format_issues.append(f"Author information line spacing was corrected")
+                    self.format_issues.append(
+                        "Author information line spacing was corrected"
+                    )
                     para.paragraph_format.line_spacing = Pt(24)
                 break
 
         if not author_info_found:
-            self.required_format_actions.append("Add author information to upper half of first page")
+            self.required_format_actions.append(
+                "Add author information to upper half of first page"
+            )
 
         author_note_found = False
         for para in first_page:
             if 'Author Note' in para.text:
                 author_note_found = True
                 if para.alignment != WD_ALIGN_PARAGRAPH.CENTER:
-                    self.format_issues.append(f"Author Note was centered: {para.text}")
+                    self.format_issues.append(
+                        f"Author Note was centered: {para.text}"
+                    )
                     para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 if not any(run.bold for run in para.runs):
-                    self.format_issues.append(f"Author Note was bolded for title: {para.text}")
+                    self.format_issues.append(
+                        f"Author Note was bolded for title: {para.text}"
+                    )
                     for run in para.runs:
                         run.bold = True
                 break
 
         if not author_note_found:
-            self.required_format_actions.append("Add Author Note to upper half of first page")
+            self.required_format_actions.append(
+                "Add Author Note to upper half of first page"
+            )
 
     async def _abstract(self):
         """Check and correct Abstract section formatting"""
@@ -229,24 +265,32 @@ class DocumentWorkFlow:
                 found_abstract = True
 
                 if paragraph.alignment != WD_ALIGN_PARAGRAPH.CENTER:
-                    self.format_issues.append(f"Abstract heading was centered: {paragraph.text}")
+                    self.format_issues.append(
+                        f"Abstract heading was centered: {paragraph.text}"
+                    )
                     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
                 if not any(run.bold for run in paragraph.runs):
-                    self.format_issues.append("Abstract heading was bolded: {paragraph.text}")
+                    self.format_issues.append(
+                        "Abstract heading was bolded: {paragraph.text}"
+                    )
                     for run in paragraph.runs:
                         run.bold = True
 
                 if paragraph.page_break_before is None:
-                    self.format_issues.append("Abstract was replaced on a separate page")
-                    paragraph.insert_paragraph_before('\n', style='Normal').page_break_before = True
+                    self.format_issues.append(
+                        "Abstract was replaced on a separate page"
+                    )
+                    paragraph.insert_paragraph_before('\n', style='Normal').page_break_before = True # noqa
                 abstract_page = True
 
                 if len(self.document.paragraphs) > i + 1:
                     abstract_text = self.document.paragraphs[i + 1]
 
                     if abstract_text.paragraph_format.first_line_indent:
-                        self.format_issues.append(f"Abstract first line indent removed: {abstract_text.text}")
+                        self.format_issues.append(
+                            f"Abstract first line indent removed: {abstract_text.text}"
+                        )
                         abstract_text.paragraph_format.first_line_indent = None
 
                     word_count = len(abstract_text.text.split())
@@ -257,9 +301,13 @@ class DocumentWorkFlow:
                 break
 
         if not found_abstract:
-            self.required_format_actions.append("Abstract heading should be added to the document")
+            self.required_format_actions.append(
+                "Abstract heading should be added to the document"
+            )
         elif not abstract_page:
-            self.required_format_actions.append("Abstract heading should be on a separate page")
+            self.required_format_actions.append(
+                "Abstract heading should be on a separate page"
+            )
 
     async def _keywords(self):
         """Check and correct Keywords section formatting"""
@@ -270,7 +318,9 @@ class DocumentWorkFlow:
                 if len(self.document.paragraphs) > i + 2:
                     keywords_paragraph = self.document.paragraphs[i + 2]
                     if not paragraph.text.lower().startswith("keywords:"):
-                        self.required_format_actions.append("Keywords heading should begin with word: 'Keywords:'")
+                        self.required_format_actions.append(
+                            "Keywords heading should begin with word: 'Keywords:'"
+                        )
                     if not any(run.font.italic for run in paragraph.runs):
                         self.format_issues.append("Keywords heading is not italicized")
                         for run in paragraph.runs:
@@ -280,7 +330,7 @@ class DocumentWorkFlow:
                     self.format_issues.append("Keywords section indented by 0.5 inches")
 
                     keywords_text = keywords_paragraph.text.split(":")[1].strip()
-                    keywords_lower = ', '.join([word.strip().lower() for word in keywords_text.split(",")])
+                    keywords_lower = ', '.join([word.strip().lower() for word in keywords_text.split(",")]) # noqa
                     keywords_paragraph.clear()
                     run = keywords_paragraph.add_run(f"Keywords: {keywords_lower}")
                     run.italic = True
@@ -299,7 +349,9 @@ class DocumentWorkFlow:
         title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         title_paragraph.runs[0].bold = True
 
-        self.format_issues.append("Main text started on a new page with repeated title in bold.")
+        self.format_issues.append(
+            "Main text started on a new page with repeated title in bold."
+        )
 
     async def _in_text_citations(self):
         """Check in-text citations for author-date format"""
@@ -313,15 +365,21 @@ class DocumentWorkFlow:
             if citations:
                 for citation in citations:
                     author_part, year, page = citation
-                    corrected_citation = f"({author_part.strip()}, {year}{page if page else ''})"
+                    corrected_citation = f"({author_part.strip()}, {year}{page if page else ''})" # noqa
 
                     if corrected_citation not in text:
                         try:
-                            paragraph.text = text.replace(f"({citation[0]}, {citation[1]}{citation[2]})",
-                                                          corrected_citation)
-                            self.format_issues.append("Corrected in-text citation format to author-date.")
+                            paragraph.text = text.replace(
+                                f"({citation[0]}, {citation[1]}{citation[2]})",
+                                corrected_citation
+                            )
+                            self.format_issues.append(
+                                "Corrected in-text citation format to author-date."
+                            )
                         except Exception as e:
-                            logger.error(f"Error correcting in-text citation '{citation}': {e}")
+                            logger.error(
+                                f"Error correcting in-text citation '{citation}': {e}"
+                            )
 
     async def _heading_levels(self):
         """Format APA-style headings based on their levels"""
@@ -355,7 +413,9 @@ class DocumentWorkFlow:
                 paragraph.runs[0].text = await self._to_title_case(paragraph.text) + "."
                 paragraph.runs[0].space_after = 0
 
-            self.format_issues.append(f"Formatted heading: '{paragraph.text}' to APA style.")
+            self.format_issues.append(
+                f"Formatted heading: '{paragraph.text}' to APA style."
+            )
 
     async def _to_title_case(self, text):
         """Helper function to convert text to title case."""
@@ -376,7 +436,7 @@ class DocumentWorkFlow:
 
             for row in table.rows:
                 for cell in row.cells:
-                    cell_borders = cell._element.findall(".//w:tcBorders", namespaces={"w": qn("w")})
+                    cell_borders = cell._element.findall(".//w:tcBorders", namespaces={"w": qn("w")}) # noqa
                     if cell_borders:
                         for border in cell_borders:
                             top_border = border.find(qn("w:top"))
@@ -396,14 +456,16 @@ class DocumentWorkFlow:
                 cell.text = cell.text.strip().title()
 
             # Обновляем текст вывода format_issues
-            self.format_issues.append(f"Table {table_count} formatted according to APA style.")
+            self.format_issues.append(
+                f"Table {table_count} formatted according to APA style."
+            )
             table_count += 1
 
     async def _figures(self):
         """Format figures according to APA style"""
         figure_count = 1
         for shape in self.document.inline_shapes:
-            figure_paragraph = shape._inline.getparent().addnext(self.document.add_paragraph())
+            figure_paragraph = shape._inline.getparent().addnext(self.document.add_paragraph()) # noqa
 
             figure_label = f"Figure {figure_count}"
             caption_paragraph = self.document.add_paragraph()
@@ -420,7 +482,9 @@ class DocumentWorkFlow:
             if new_section:
                 self.document.add_paragraph("\f")
 
-            self.format_issues.append(f"{figure_label} formatted with APA-style caption.")
+            self.format_issues.append(
+                f"{figure_label} formatted with APA-style caption."
+            )
             figure_count += 1
 
     # """ENCAPSULATED FUNCTIONS"""

@@ -3,8 +3,7 @@ from datetime import datetime
 from sqlalchemy import (
     Table, Column,
     Integer, String,
-    TIMESTAMP, ForeignKey,
-    Boolean, MetaData,
+    TIMESTAMP, MetaData,
 )
 
 metadata = MetaData()
