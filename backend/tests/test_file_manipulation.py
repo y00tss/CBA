@@ -58,7 +58,8 @@ async def test_save_document(mock_document_init, async_session):
     with patch.object(mock_document_init, '_check_extension', return_value=True), \
             patch.object(mock_document_init, '_magazine_exists', return_value=True), \
             patch.object(mock_document_init, '_check_max_articles', return_value=True):
-        file_path = await mock_document_init.save_document(user_name="test_user", session=async_session)
+        file_path = await mock_document_init.save_document(
+            user_name="test_user", session=async_session)
 
         assert file_path.endswith(".docx")
 
@@ -77,7 +78,9 @@ async def test_check__txt_extension(mock_document_with_wrong_ext_init):
     """Test extension check with wrong extension"""
     mock_document_with_wrong_ext_init.file.filename = "test_document_txt.txt"
 
-    with pytest.raises(ValueError, match="Invalid file extension. Only .docx files are allowed"):
+    with pytest.raises(
+            ValueError, match="Invalid file extension. Only .docx files are allowed"
+    ):
         await mock_document_with_wrong_ext_init._check_extension()
 
 
@@ -101,7 +104,7 @@ async def test_delete_document():
 
     assert os.path.exists(file_path)
 
-    with patch("os.remove") as mock_remove:
+    with patch("os.remove") as mock_remove: # noqa
         result = await DocumentInit.delete_document(file_path)
 
         assert result is True
