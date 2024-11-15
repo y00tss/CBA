@@ -27,7 +27,6 @@ class BaseDocument(ABC):
     async def delete_document(path: str) -> bool:
         """Static method to delete a document from the file system"""
         if path and os.path.exists(path):
-            print(f"Deleting document: {path}")
             os.remove(path)
             return True
         return False

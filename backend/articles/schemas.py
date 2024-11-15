@@ -13,7 +13,7 @@ class ArticleCreateRequest(BaseModel):
     refactor_type: RefactorType
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ArticleUpdateRequest(BaseModel):
@@ -22,4 +22,4 @@ class ArticleUpdateRequest(BaseModel):
     refactor_type: RefactorType
 
     class Config:
-        orm_mode = True
+        from_attributes = True

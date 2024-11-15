@@ -4,20 +4,18 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    restart: always
+#    restart: always
     command: >
       /bin/sh -c "
       alembic upgrade head &&
       flake8 . &&
+      pytest &&
       uvicorn settings.main:app --host 0.0.0.0 --port 8000
       "
     ports:
       - "8001:8000"
     volumes:
       - ./backend:/app
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     env_file:
       - ./backend/.env
     depends_on:
